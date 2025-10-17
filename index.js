@@ -240,10 +240,5 @@ function mockSalesSummary(period) {
   return `Mock sales for last ${days} days. Orders ${orders}. Revenue ${revenue}`;
 }
 
-// small wrappers to choose mock or real
-async function mockUpdatePrice(productTitle, newPrice) {
-  return mockUpdatePrice(productTitle, newPrice); // intentionally simple
-}
-
 // Initialize
 client.initialize();
