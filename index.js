@@ -1,26 +1,35 @@
-// Fix for whatsapp-web.js import error (CommonJS vs ESM)
-// Replace the top imports in your index.js with this block
+// Yes, replace the same upper part that defines how the WhatsApp client is created.
+// The updated section below includes both the correct import method and the headless Puppeteer config that works on Railway.
 
 import 'dotenv/config';
 import qrcode from 'qrcode-terminal';
 import fetch from 'node-fetch';
 import OpenAI from 'openai';
-
-// whatsapp-web.js uses CommonJS, so import it this way
 import pkg from 'whatsapp-web.js';
 const { Client, LocalAuth } = pkg;
 
-// the rest of your code remains unchanged below this point
-
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
-const SHOPIFY_DOMAIN = process.env.SHOPIFY_STORE_DOMAIN;
-const SHOPIFY_TOKEN = process.env.SHOPIFY_ADMIN_TOKEN;
 const MOCK_MODE = String(process.env.MOCK_MODE || '').toLowerCase() === 'true';
 
+// ✅ This is the part that fixes your Railway crash
+const puppeteerArgs = {
+  headless: true,
+  executablePath: '/usr/bin/google-chrome-stable', // Path used in Railway
+  args: [
+    '--no-sandbox',
+    '--disable-setuid-sandbox',
+    '--disable-dev-shm-usage',
+    '--disable-accelerated-2d-canvas',
+    '--no-first-run',
+    '--no-zygote',
+    '--disable-gpu'
+  ]
+};
+
+// ✅ Create WhatsApp client with safer Puppeteer options
 const client = new Client({
   authStrategy: new LocalAuth(),
-  puppeteer: { headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] }
+  puppeteer: puppeteerArgs
 });
 
 client.on('qr', qr => {
@@ -32,7 +41,13 @@ client.on('ready', () => {
   console.log('WhatsApp connected');
 });
 
-// rest of your logic follows...
+client.on('disconnected', reason => {
+  console.log('WhatsApp disconnected:', reason);
+});
+
+// ✅ Keep this line at the bottom of this section
+client.initialize();
+
 
 
 client.on('message', async msg => {
